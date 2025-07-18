@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Verification</title>
+
+  <!-- ✅ Tailwind CDN (Use Tailwind CLI in production) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    @keyframes pop-in { 0% {opacity:0;transform:scale(0.9);} 100% {opacity:1;transform:scale(1);} }
+    @keyframes draw-circle { from {stroke-dashoffset: 754;} to {stroke-dashoffset: 0;} }
+    @keyframes draw-check { from {stroke-dashoffset: 175;} to {stroke-dashoffset: 0;} }
+    @keyframes fade-in-up { from {opacity:0; transform:translateY(20px);} to {opacity:1; transform:translateY(0);} }
+
+    .animate-pop-in { animation: pop-in 0.5s ease-out forwards; }
+    .animate-draw-circle { stroke-dasharray: 754; stroke-dashoffset: 754; animation: draw-circle 1s 0.5s ease-out forwards; }
+    .animate-draw-check { stroke-dasharray: 175; stroke-dashoffset: 175; animation: draw-check 0.8s 1s ease-out forwards; }
+    .will-animate { opacity: 0; }
+    .animate-fade-in-up-1 { animation: fade-in-up 0.5s 1.8s ease-out forwards; }
+    .animate-fade-in-up-2 { animation: fade-in-up 0.5s 2.0s ease-out forwards; }
+    .animate-fade-in-up-3 { animation: fade-in-up 0.5s 2.2s ease-out forwards; }
+  </style>
+</head>
+
+<body class="bg-emerald-50 flex items-center justify-center min-h-screen p-4">
+
+  <div class="bg-white rounded-2xl shadow-xl p-8 sm:p-12 max-w-md w-full text-center animate-pop-in">
+    <div class="w-32 h-32 mx-auto mb-6">
+      <svg viewBox="0 0 250 250">
+        <circle cx="125" cy="125" r="120" fill="none" stroke="#D1FAE5" stroke-width="10"/>
+        <circle class="animate-draw-circle" cx="125" cy="125" r="120" fill="none" stroke="#10B981" stroke-width="10" stroke-linecap="round" transform="rotate(-90 125 125)"/>
+        <polyline class="animate-draw-check" points="62,125 112,175 188,90" fill="none" stroke="#10B981" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <h2 id="status-title" class="text-3xl font-bold text-gray-800 mb-2 will-animate animate-fade-in-up-1">Verifying...</h2>
+    <p id="status-msg" class="text-gray-600 text-lg mb-8 will-animate animate-fade-in-up-2">Please wait while we confirm your transaction.</p>
+
+    <button onclick="goHome()" class="w-full bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transform hover:scale-105 transition-all duration-300 will-animate animate-fade-in-up-3">
+      Go to Dashboard
+    </button>
+  </div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/dashboard"; // Change this path as needed
+    }
+
+    window.onload = async function () {
+      // Read query params from URL
+      const formData = new URLSearchParams(window.location.search);
+      const jsonObject = {};
+
+      for (const [key, value] of formData.entries()) {
+        jsonObject[key] = value;
+      }
+
+      // ✅ Log the values in console
+      console.log("👉 JSON sent for verification:", jsonObject);
+
+      try {
+        const response = await fetch('https://dikshi.ddns.net/chitschemereact/api/Gateway/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(jsonObject)
+        });
+
+        const result = await response.json();
+        console.log("✅ API Response:", result);
+
+        const title = document.getElementById("status-title");
+        const msg = document.getElementById("status-msg");
+
+        if (response.ok && result.status === "success") {
+          title.innerText = "Payment Successful!";
+          msg.innerHTML = `Your payment of <span class="font-semibold text-gray-700">₹${result.amount}</span> has been completed.`;
+        } else {
+          title.innerText = "Payment Failed!";
+          msg.innerText = result.message || "Verification failed.";
+        }
+      } catch (error) {
+        console.error("❌ Verification Error:", error);
+        document.getElementById("status-title").innerText = "Error!";
+        document.getElementById("status-msg").innerText = "Unable to verify the payment.";
+      }
+    };
+  </script>
+
+</body>
+</html>
